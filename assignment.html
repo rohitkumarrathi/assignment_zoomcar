@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Operational Cities</title>
+  <style>
+        * {
+            box-sizing: border-box;
+        }
+        body {
+            background-color: #fff;
+            margin: 1em 2em;
+        }
+        #name-input {
+            width: 25%;
+            font-size: 14px;
+            padding: 10px;
+            border: 1px solid black;
+        }
+        #name-input:focus {
+            outline: aliceblue;
+        }
+        .checkbox-filter {
+            float: right;
+            margin-right: 4em;
+        }
+        .grid-container {
+            display: grid;
+            grid-gap: 50px 50px;
+            grid-template-columns: auto auto auto auto;
+        }
+        .grid-item, h1 {
+            text-align: center;
+        }
+        h2 {
+            margin: 12px 0 0 0;
+        }
+        .uppercase{
+            text-transform: uppercase;
+        }
+    
+        @media only screen and (min-width: 500px) and (max-width: 599px) {
+            .grid-container {
+                display: grid;
+                grid-gap: 50px 50px;
+                grid-template-columns: auto;
+            }
+        }
+        @media only screen and (min-width: 600px) and (max-width: 799px) {
+            .grid-container {
+                display: grid;
+                grid-gap: 50px 50px;
+                grid-template-columns: auto auto;
+            }
+        }
+        @media only screen and (min-width: 800px) and (max-width: 950px) {
+            .grid-container {
+                display: grid;
+                grid-gap: 50px 50px;
+                grid-template-columns: auto auto auto;
+            }
+        }
+    
+        /* Card styles */
+        .card {
+            background-color: #d8d8d8;
+            border-radius: 3px;
+            border: 1px solid #e9e9e9;
+            font-weight: 700;
+            font-size: 30px;
+        }
+        .profile img {
+            position: relative;
+            top: 0.675em;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            border: 2px solid #000;
+        }
+        .name {
+            font-size: 0.8em;
+            color: #00936E;
+        }
+    
+        /* Loader Styles */
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 5px solid #747474;
+            width: 50px;
+            height: 50px;
+            animation: spin 2s linear infinite;
+            margin: 100px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <h1 class="uppercase">Cities</h1>
+    <input type="text" id="name-input" onkeyup="searchFunction()" 
+            placeholder="Search City" 
+            title="Type in a name">
+    <label class="checkbox-filter uppercase">HD Enabled <input type="checkbox" name="hdenabled"></label>
+    <label class="checkbox-filter uppercase">One Way Enabled <input type="checkbox" name="onewayenabled"></label>
+    <!-- <div class="list grid-container"></div> -->
+    <h2>Popular</h2>
+    <div class="list popular-list grid-container"></div>
+    <h2>Others</h2>
+    <div class="list others-list grid-container"></div>
+    <div class="loader"></div>
+    <script>
+        const url = 'https://api.zoomcar.com/v4/cities?platform=web'; 
+
+        async function getData() {
+            cities = await fetch(url)
+                .then(resp => resp.json()) // Transform the data into json
+                .then(data => data.cities)
+                .catch(function(error) {
+                    console.log(error);
+                });  
+            return cities;
+        }
+
+        let cities = getData()
+                        .then(result => {
+                            console.log(result);
+                            populateList(result);
+                        })
+
+        function populateList(items){
+            document.querySelector(".loader").style.display = "none";
+            // let list = document.querySelector(".list");
+            let popularList = document.querySelector(".popular-list");
+            let othersList = document.querySelector(".others-list");
+            while (popularList.hasChildNodes()) {  
+                popularList.removeChild(popularList.firstChild);
+            }
+            while (othersList.hasChildNodes()) {  
+                othersList.removeChild(othersList.firstChild);
+            }
+
+            items.forEach(item => {
+                let city = `
+                <div class="card grid-item">
+                    <div class="profile">
+                        <img src="${item.icon}">
+                    </div>
+                    <div class="name"><p>${item.name}</p></div>     
+                </div>
+                `;
+                if(item.popular) {
+                    popularList.append(parseHTML(city));
+                }
+                else {
+                    othersList.append(parseHTML(city));
+                }
+                // list.append(parseHTML(city));
+            })
+        }
+
+        function parseHTML(html) {
+            let t = document.createElement('template');
+            t.innerHTML = html;
+            return t.content.cloneNode(true);
+        }
+
+        function searchFunction() {
+            let input, filterTxt, item, i, txtValue;
+            input = document.querySelector("input");
+            filterTxt = input.value.toUpperCase();
+            // let list = document.querySelector(".list");
+            // let listItems = list.querySelectorAll(".grid-item");
+            let popularList = document.querySelector(".popular-list");
+            popularListItems = popularList.querySelectorAll(".grid-item");
+            let othersList = document.querySelector(".others-list");
+            otherListItems = othersList.querySelectorAll(".grid-item");
+            
+            for (i = 0; i < popularListItems.length; i++) {
+                item = popularListItems[i];
+                txtValue = (item.textContent || item.innerText).toUpperCase();
+                if (txtValue.includes(filterTxt)) {
+                    item.style.display = "block";
+                } else {
+                    item.style.display = "none";
+                }
+            }
+            for (i = 0; i < otherListItems.length; i++) {
+                item = otherListItems[i];
+                txtValue = (item.textContent || item.innerText).toUpperCase();
+                if (txtValue.includes(filterTxt)) {
+                    item.style.display = "block";
+                } else {
+                    item.style.display = "none";
+                }
+            }
+        }
+
+        const hdEnabledCheckbox = document.querySelector("input[name=hdenabled]");
+        hdEnabledCheckbox.addEventListener( 'change', () => {
+            filterList(hdEnabledCheckbox.checked, oneWayEnabledCheckbox.checked);
+        });
+
+        const oneWayEnabledCheckbox = document.querySelector("input[name=onewayenabled]");
+        oneWayEnabledCheckbox.addEventListener( 'change', () => {
+            filterList(hdEnabledCheckbox.checked, oneWayEnabledCheckbox.checked);
+        });
+
+        function filterList(hdFlag, oneWayFlag) {
+            let filterCities;
+            if(hdFlag && oneWayFlag) {
+                filterCities = cities.filter(element => element.hd_enabled && element.one_way_enabled);
+            }
+            else if(hdFlag) {
+                filterCities = cities.filter(element => element.hd_enabled);
+            }
+            else if(oneWayFlag) {
+                filterCities = cities.filter(element => element.one_way_enabled);
+            }
+            else {
+                filterCities = [...cities];
+            }
+            populateList(filterCities);
+        }
+    </script>
+</body>
+</html>
